@@ -83,3 +83,18 @@ try:
         
         def mostrar_monto(valor):
             return "***" if ocultar_saldos else f"${valor:,.2f}"
+
+        col1.metric("💵 Saldo Efectivo", mostrar_monto(saldo_efectivo))
+        col2.metric("📱 Saldo MP", mostrar_monto(saldo_mp))
+        col3.metric("💰 SALDO TOTAL", mostrar_monto(saldo_efectivo + saldo_mp))
+        
+        st.subheader("Historial Reciente")
+        if ocultar_saldos:
+            st.info("El historial está oculto por privacidad.")
+        else:
+            st.dataframe(df.tail(10), use_container_width=True)
+
+    else:
+        st.info("No hay datos todavía. ¡Registra tu primera operación!")
+except Exception as e:
+    st.warning("⚠️ Asegúrate de que la primera fila de tu Google Sheet tenga estos títulos exactos: Fecha, Tipo, Metodo, Subcategoria, Monto, Observaciones")
