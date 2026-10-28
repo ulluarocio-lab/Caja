@@ -82,4 +82,4 @@ try:
         col1, col2, col3 = st.columns(3)
         
         def mostrar_monto(valor):
-            return "***" if
+            return "***" if ocultar_saldos else f"${valor:,.2f}"
