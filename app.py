@@ -10,12 +10,14 @@ from datetime import datetime
 st.set_page_config(page_title="Mi Caja Diaria", page_icon="📦", layout="centered")
 
 # ==========================================
-# 2. CONEXIÓN A GOOGLE SHEETS
+# 2. CONEXIÓN A GOOGLE SHEETS (VERSIÓN NUBE)
 # ==========================================
 @st.cache_resource
 def conectar_sheets():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name("credenciales.json", scope)
+    # Leemos las credenciales desde los secretos de Streamlit
+    creds_dict = dict(st.secrets["gcp_service_account"])
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     cliente = gspread.authorize(creds)
     # ATENCIÓN: Reemplaza 'Caja_App' si tu Google Sheet se llama diferente
     sheet = cliente.open("Caja_App").sheet1 
@@ -80,19 +82,4 @@ try:
         col1, col2, col3 = st.columns(3)
         
         def mostrar_monto(valor):
-            return "***" if ocultar_saldos else f"${valor:,.2f}"
-
-        col1.metric("💵 Saldo Efectivo", mostrar_monto(saldo_efectivo))
-        col2.metric("📱 Saldo MP", mostrar_monto(saldo_mp))
-        col3.metric("💰 SALDO TOTAL", mostrar_monto(saldo_efectivo + saldo_mp))
-        
-        st.subheader("Historial Reciente")
-        if ocultar_saldos:
-            st.info("El historial está oculto por privacidad.")
-        else:
-            st.dataframe(df.tail(10), use_container_width=True)
-
-    else:
-        st.info("No hay datos todavía. ¡Registra tu primera operación!")
-except Exception as e:
-    st.warning("⚠️ Asegúrate de que la primera fila de tu Google Sheet tenga estos títulos exactos: Fecha, Tipo, Metodo, Subcategoria, Monto, Observaciones")
+            return "***" if
