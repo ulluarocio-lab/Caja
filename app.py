@@ -25,7 +25,22 @@ sheet = conectar_sheets()
 # ==========================================
 # 3. INTERFAZ: REGISTRO DE OPERACIONES
 # ==========================================
-st.title("📦 Caja Diaria")
+
+# Inyectamos CSS para la fuente tipo Counter Strike y achicamos el tamaño
+st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&display=swap');
+    .titulo-cs {
+        font-family: 'Black Ops One', sans-serif;
+        font-size: 32px; /* Más chico que el title normal */
+        color: #E58D24; /* Un tono naranja táctico (opcional) */
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+    </style>
+    <div class="titulo-cs">📦 CAJA DIARIA</div>
+""", unsafe_allow_html=True)
+
 st.markdown("---")
 
 st.subheader("📝 Nueva Operación")
