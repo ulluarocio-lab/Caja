@@ -95,4 +95,52 @@ try:
         filas_datos = todos_los_valores[1:]
         df = pd.DataFrame(filas_datos, columns=encabezados)
         
-        # Convertir monto a número para poder
+        # Convertir monto a número para poder sumar
+        df['Monto'] = pd.to_numeric(df['Monto'], errors='coerce').fillna(0)
+        
+        # Cálculos
+        ingresos_efectivo = df[(df['Tipo'] == 'Ingreso (Venta)') & (df['Metodo'] == 'Efectivo')]['Monto'].sum()
+        salidas_efectivo = df[(df['Tipo'].isin(['Retiro', 'Gasto'])) & (df['Metodo'] == 'Efectivo')]['Monto'].sum()
+        saldo_efectivo = ingresos_efectivo - salidas_efectivo
+        
+        ingresos_mp = df[(df['Tipo'] == 'Ingreso (Venta)') & (df['Metodo'] == 'Mercado Pago (MP)')]['Monto'].sum()
+        salidas_mp = df[(df['Tipo'].isin(['Retiro', 'Gasto'])) & (df['Metodo'] == 'Mercado Pago (MP)')]['Monto'].sum()
+        saldo_mp = ingresos_mp - salidas_mp
+        
+        def mostrar_monto(valor):
+            return "***" if ocultar_saldos else f"${valor:,.2f}"
+
+        col1, col2 = st.columns(2)
+        col1.metric("💵 Efectivo", mostrar_monto(saldo_efectivo))
+        col2.metric("📱 MP", mostrar_monto(saldo_mp))
+        
+        st.metric("💰 SALDO TOTAL", mostrar_monto(saldo_efectivo + saldo_mp))
+        
+        # ==========================================
+        # 6. HISTORIAL ORDENADO Y ELIMINAR ÚLTIMA
+        # ==========================================
+        st.markdown("---")
+        st.markdown('<div class="subtitulo-cs">📋 HISTORIAL RECIENTE</div>', unsafe_allow_html=True)
+        
+        if ocultar_saldos:
+            st.info("Oculto por privacidad.")
+        else:
+            # Invertimos el DataFrame ([::-1]) para que lo más nuevo quede arriba
+            df_invertido = df.iloc[::-1].head(10)
+            st.dataframe(df_invertido, use_container_width=True)
+        
+        # Botón para eliminar la última operación
+        st.write("¿Te equivocaste en la última carga?")
+        if st.button("🗑️ Eliminar última operación", use_container_width=True):
+            cantidad_filas = len(todos_los_valores)
+            if cantidad_filas > 1: # Protege los encabezados de la fila 1
+                sheet.delete_rows(cantidad_filas)
+                st.success("Última operación eliminada con éxito.")
+                st.rerun() # Recarga la app para refrescar datos
+            else:
+                st.warning("No hay operaciones para eliminar.")
+
+    else:
+        st.info("No hay datos todavía.")
+except Exception as e:
+    st.warning("⚠️ Verifica los títulos en tu Google Sheet. Detalles del error para el desarrollador: " + str(e))
