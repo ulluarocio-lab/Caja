@@ -16,8 +16,8 @@ st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&display=swap');
     
-    /* Aplicar fuente táctica a todos los títulos, subtítulos y números de métricas */
-    h1, h2, h3, .titulo-cs, .subtitulo-cs, div[data-testid="stMetricValue"] > div {
+    /* Aplicar fuente táctica SOLO a títulos y subtítulos (excluyendo números) */
+    h1, h2, h3, .titulo-cs, .subtitulo-cs {
         font-family: 'Black Ops One', sans-serif !important;
         color: #E58D24 !important; /* Naranja CS */
         text-transform: uppercase;
@@ -71,11 +71,12 @@ if submit:
     if monto <= 0:
         st.error("El monto debe ser mayor a 0.")
     else:
-        fecha_actual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # Fecha en formato más corto y amigable (Día/Mes/Año Hora:Minuto)
+        fecha_actual = datetime.now().strftime("%d/%m/%Y %H:%M")
         fila = [fecha_actual, tipo_op, metodo, subcategoria, monto, observaciones]
         sheet.append_row(fila)
         st.success(f"✅ {tipo_op} guardado.")
-        st.rerun() # Recarga la app al instante para actualizar saldos
+        st.rerun() 
 
 # ==========================================
 # 5. DASHBOARD Y SALDOS
@@ -86,19 +87,15 @@ st.markdown('<div class="subtitulo-cs">📊 SALDOS</div>', unsafe_allow_html=Tru
 ocultar_saldos = st.toggle("👁️ Ocultar saldos", value=False)
 
 try:
-    # Traemos todos los valores (incluyendo encabezados para contar filas reales)
     todos_los_valores = sheet.get_all_values()
     
     if len(todos_los_valores) > 1:
-        # Extraemos solo los datos para el DataFrame
         encabezados = todos_los_valores[0]
         filas_datos = todos_los_valores[1:]
         df = pd.DataFrame(filas_datos, columns=encabezados)
         
-        # Convertir monto a número para poder sumar
         df['Monto'] = pd.to_numeric(df['Monto'], errors='coerce').fillna(0)
         
-        # Cálculos
         ingresos_efectivo = df[(df['Tipo'] == 'Ingreso (Venta)') & (df['Metodo'] == 'Efectivo')]['Monto'].sum()
         salidas_efectivo = df[(df['Tipo'].isin(['Retiro', 'Gasto'])) & (df['Metodo'] == 'Efectivo')]['Monto'].sum()
         saldo_efectivo = ingresos_efectivo - salidas_efectivo
@@ -125,18 +122,16 @@ try:
         if ocultar_saldos:
             st.info("Oculto por privacidad.")
         else:
-            # Invertimos el DataFrame ([::-1]) para que lo más nuevo quede arriba
             df_invertido = df.iloc[::-1].head(10)
             st.dataframe(df_invertido, use_container_width=True)
         
-        # Botón para eliminar la última operación
         st.write("¿Te equivocaste en la última carga?")
         if st.button("🗑️ Eliminar última operación", use_container_width=True):
             cantidad_filas = len(todos_los_valores)
-            if cantidad_filas > 1: # Protege los encabezados de la fila 1
+            if cantidad_filas > 1:
                 sheet.delete_rows(cantidad_filas)
                 st.success("Última operación eliminada con éxito.")
-                st.rerun() # Recarga la app para refrescar datos
+                st.rerun() 
             else:
                 st.warning("No hay operaciones para eliminar.")
 
