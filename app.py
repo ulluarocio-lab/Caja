@@ -7,7 +7,6 @@ from datetime import datetime
 # ==========================================
 # 1. CONFIGURACIÓN DE PÁGINA (Móvil)
 # ==========================================
-# Layout "centered" es ideal para celulares porque no estira los elementos
 st.set_page_config(page_title="Caja Diaria", page_icon="📦", layout="centered")
 
 # ==========================================
@@ -32,14 +31,15 @@ st.markdown("---")
 
 st.subheader("📝 Nueva Operación")
 
+# SACAMOS EL TIPO DE OPERACIÓN AFUERA DEL FORMULARIO
+# Así la interfaz se actualiza al instante al cambiar la opción
+tipo_op = st.selectbox("Tipo de Operación", ["Ingreso (Venta)", "Retiro", "Gasto"])
+
 with st.form("registro_form"):
-    # Usamos selectbox en lugar de radio buttons horizontales para ahorrar espacio lateral
-    tipo_op = st.selectbox("Tipo", ["Ingreso (Venta)", "Retiro", "Gasto"])
     metodo = st.selectbox("Método", ["Efectivo", "Mercado Pago (MP)"])
-    
-    # Input numérico que abre el teclado numérico en el celular
     monto = st.number_input("Monto ($)", min_value=0.0, format="%.2f", step=100.0)
     
+    # Lógicas dinámicas (ahora reaccionan al instante)
     subcategoria = "-"
     if tipo_op == "Retiro":
         subcategoria = st.selectbox("Destino", ["Familia", "Propios"])
@@ -48,7 +48,6 @@ with st.form("registro_form"):
     if tipo_op in ["Retiro", "Gasto"]:
         observaciones = st.text_input("Observaciones (Opcional)")
         
-    # Botón que ocupa todo el ancho en móviles
     submit = st.form_submit_button("Guardar Operación", use_container_width=True)
 
 if submit:
@@ -61,7 +60,7 @@ if submit:
         st.success(f"✅ {tipo_op} guardado.")
 
 # ==========================================
-# 4. DASHBOARD Y SALDOS (Diseño Móvil)
+# 4. DASHBOARD Y SALDOS
 # ==========================================
 st.markdown("---")
 st.subheader("📊 Saldos")
@@ -85,7 +84,6 @@ try:
         def mostrar_monto(valor):
             return "***" if ocultar_saldos else f"${valor:,.2f}"
 
-        # Distribución 2x1 ideal para pantallas verticales
         col1, col2 = st.columns(2)
         col1.metric("💵 Efectivo", mostrar_monto(saldo_efectivo))
         col2.metric("📱 MP", mostrar_monto(saldo_mp))
@@ -97,7 +95,6 @@ try:
         if ocultar_saldos:
             st.info("Oculto por privacidad.")
         else:
-            # use_container_width ajusta la tabla a los bordes del celular
             st.dataframe(df.tail(10), use_container_width=True)
 
     else:
