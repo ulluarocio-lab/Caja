@@ -26,16 +26,26 @@ sheet = conectar_sheets()
 # 3. INTERFAZ: REGISTRO DE OPERACIONES
 # ==========================================
 
-# Inyectamos CSS para la fuente tipo Counter Strike y achicamos el tamaño
+# Inyectamos CSS para la fuente tipo Counter Strike (Título y Subtítulo)
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&display=swap');
+    
     .titulo-cs {
         font-family: 'Black Ops One', sans-serif;
-        font-size: 32px; /* Más chico que el title normal */
-        color: #E58D24; /* Un tono naranja táctico (opcional) */
+        font-size: 32px; 
+        color: #E58D24; 
         text-transform: uppercase;
         letter-spacing: 2px;
+    }
+    
+    .subtitulo-cs {
+        font-family: 'Black Ops One', sans-serif;
+        font-size: 22px; /* Apenas más chico para mantener jerarquía */
+        color: #E58D24;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-bottom: 15px; /* Da un poco de aire antes del formulario */
     }
     </style>
     <div class="titulo-cs">📦 CAJA DIARIA</div>
@@ -43,7 +53,8 @@ st.markdown("""
 
 st.markdown("---")
 
-st.subheader("📝 Nueva Operación")
+# Reemplazamos el st.subheader normal por nuestro subtítulo personalizado
+st.markdown('<div class="subtitulo-cs">📝 NUEVA OPERACIÓN</div>', unsafe_allow_html=True)
 
 # SACAMOS EL TIPO DE OPERACIÓN AFUERA DEL FORMULARIO
 # Así la interfaz se actualiza al instante al cambiar la opción
