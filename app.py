@@ -8,7 +8,6 @@ from datetime import datetime
 # 1. CONFIGURACIÓN DE PÁGINA (Móvil)
 # ==========================================
 st.set_page_config(page_title="Caja Diaria", page_icon="📦", layout="centered")
-
 # ==========================================
 # 2. CONEXIÓN A GOOGLE SHEETS
 # ==========================================
