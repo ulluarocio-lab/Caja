@@ -8,8 +8,29 @@ from datetime import datetime
 # 1. CONFIGURACIÓN DE PÁGINA (Móvil)
 # ==========================================
 st.set_page_config(page_title="Caja Diaria", page_icon="📦", layout="centered")
+
 # ==========================================
-# 2. CONEXIÓN A GOOGLE SHEETS
+# 2. ESTILO GLOBAL: COUNTER STRIKE THEME
+# ==========================================
+st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&display=swap');
+    
+    /* Aplicar fuente táctica a todos los títulos, subtítulos y números de métricas */
+    h1, h2, h3, .titulo-cs, .subtitulo-cs, div[data-testid="stMetricValue"] > div {
+        font-family: 'Black Ops One', sans-serif !important;
+        color: #E58D24 !important; /* Naranja CS */
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+    }
+    
+    .titulo-cs { font-size: 32px; }
+    .subtitulo-cs { font-size: 22px; margin-bottom: 15px; }
+    </style>
+""", unsafe_allow_html=True)
+
+# ==========================================
+# 3. CONEXIÓN A GOOGLE SHEETS
 # ==========================================
 @st.cache_resource
 def conectar_sheets():
@@ -23,48 +44,19 @@ def conectar_sheets():
 sheet = conectar_sheets()
 
 # ==========================================
-# 3. INTERFAZ: REGISTRO DE OPERACIONES
+# 4. INTERFAZ: REGISTRO DE OPERACIONES
 # ==========================================
-
-# Inyectamos CSS para la fuente tipo Counter Strike (Título y Subtítulo)
-st.markdown("""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&display=swap');
-    
-    .titulo-cs {
-        font-family: 'Black Ops One', sans-serif;
-        font-size: 32px; 
-        color: #E58D24; 
-        text-transform: uppercase;
-        letter-spacing: 2px;
-    }
-    
-    .subtitulo-cs {
-        font-family: 'Black Ops One', sans-serif;
-        font-size: 22px; /* Apenas más chico para mantener jerarquía */
-        color: #E58D24;
-        text-transform: uppercase;
-        letter-spacing: 1.5px;
-        margin-bottom: 15px; /* Da un poco de aire antes del formulario */
-    }
-    </style>
-    <div class="titulo-cs">📦 CAJA DIARIA</div>
-""", unsafe_allow_html=True)
-
+st.markdown('<div class="titulo-cs">📦 CAJA DIARIA</div>', unsafe_allow_html=True)
 st.markdown("---")
 
-# Reemplazamos el st.subheader normal por nuestro subtítulo personalizado
 st.markdown('<div class="subtitulo-cs">📝 NUEVA OPERACIÓN</div>', unsafe_allow_html=True)
 
-# SACAMOS EL TIPO DE OPERACIÓN AFUERA DEL FORMULARIO
-# Así la interfaz se actualiza al instante al cambiar la opción
 tipo_op = st.selectbox("Tipo de Operación", ["Ingreso (Venta)", "Retiro", "Gasto"])
 
 with st.form("registro_form"):
     metodo = st.selectbox("Método", ["Efectivo", "Mercado Pago (MP)"])
     monto = st.number_input("Monto ($)", min_value=0.0, format="%.2f", step=100.0)
     
-    # Lógicas dinámicas (ahora reaccionan al instante)
     subcategoria = "-"
     if tipo_op == "Retiro":
         subcategoria = st.selectbox("Destino", ["Familia", "Propios"])
@@ -83,46 +75,24 @@ if submit:
         fila = [fecha_actual, tipo_op, metodo, subcategoria, monto, observaciones]
         sheet.append_row(fila)
         st.success(f"✅ {tipo_op} guardado.")
+        st.rerun() # Recarga la app al instante para actualizar saldos
 
 # ==========================================
-# 4. DASHBOARD Y SALDOS
+# 5. DASHBOARD Y SALDOS
 # ==========================================
 st.markdown("---")
-st.subheader("📊 Saldos")
+st.markdown('<div class="subtitulo-cs">📊 SALDOS</div>', unsafe_allow_html=True)
 
 ocultar_saldos = st.toggle("👁️ Ocultar saldos", value=False)
 
 try:
-    datos = sheet.get_all_records()
-    if datos:
-        df = pd.DataFrame(datos)
+    # Traemos todos los valores (incluyendo encabezados para contar filas reales)
+    todos_los_valores = sheet.get_all_values()
+    
+    if len(todos_los_valores) > 1:
+        # Extraemos solo los datos para el DataFrame
+        encabezados = todos_los_valores[0]
+        filas_datos = todos_los_valores[1:]
+        df = pd.DataFrame(filas_datos, columns=encabezados)
         
-        # Cálculos
-        ingresos_efectivo = df[(df['Tipo'] == 'Ingreso (Venta)') & (df['Metodo'] == 'Efectivo')]['Monto'].sum()
-        salidas_efectivo = df[(df['Tipo'].isin(['Retiro', 'Gasto'])) & (df['Metodo'] == 'Efectivo')]['Monto'].sum()
-        saldo_efectivo = ingresos_efectivo - salidas_efectivo
-        
-        ingresos_mp = df[(df['Tipo'] == 'Ingreso (Venta)') & (df['Metodo'] == 'Mercado Pago (MP)')]['Monto'].sum()
-        salidas_mp = df[(df['Tipo'].isin(['Retiro', 'Gasto'])) & (df['Metodo'] == 'Mercado Pago (MP)')]['Monto'].sum()
-        saldo_mp = ingresos_mp - salidas_mp
-        
-        def mostrar_monto(valor):
-            return "***" if ocultar_saldos else f"${valor:,.2f}"
-
-        col1, col2 = st.columns(2)
-        col1.metric("💵 Efectivo", mostrar_monto(saldo_efectivo))
-        col2.metric("📱 MP", mostrar_monto(saldo_mp))
-        
-        st.metric("💰 SALDO TOTAL", mostrar_monto(saldo_efectivo + saldo_mp))
-        
-        st.markdown("---")
-        st.subheader("Historial")
-        if ocultar_saldos:
-            st.info("Oculto por privacidad.")
-        else:
-            st.dataframe(df.tail(10), use_container_width=True)
-
-    else:
-        st.info("No hay datos todavía.")
-except Exception as e:
-    st.warning("⚠️ Verifica los títulos en tu Google Sheet: Fecha, Tipo, Metodo, Subcategoria, Monto, Observaciones")
+        # Convertir monto a número para poder
